@@ -6,11 +6,9 @@ namespace XPG
 {
     const char* const ClassName = "XPG";
     const char* const Title = "XPG Reborn";
-    static Window* theWindow = NULL;
-    LPCTSTR HelloString = TEXT("Hello, World!");
 
     VOID CALLBACK TimerProc(HWND inWindowHandle, UINT inMessage, UINT_PTR inId,
-                            DWORD inTime)
+        DWORD inTime)
     {
         std::cout << "TIMER" << std::endl;
         ShowWindow(inWindowHandle, SW_SHOWNORMAL);
@@ -19,7 +17,6 @@ namespace XPG
 
     Window::Window()
     {
-        theWindow = this;
         mInstanceHandle = GetModuleHandle(NULL);
 
         WNDCLASSEX windowClass;
@@ -48,7 +45,7 @@ namespace XPG
         dwExStyle |= WS_EX_WINDOWEDGE;
         dwStyle |= WS_OVERLAPPEDWINDOW;
 
-        mWindowHandle = CreateWindowEx(dwExStyle, ClassName, Title,
+        mWindowHandle = CreateWindowEx(dwExStyle, ClassName, "XPG Reborn",
                                dwStyle, CW_USEDEFAULT, 0, 640,
                                480, NULL, NULL, mInstanceHandle, this);
 
@@ -57,14 +54,17 @@ namespace XPG
             std::cerr << "error on CreateWindowEx\n";
         }
 
-        mDeviceContext = GetDC(mWindowHandle);
-
-        ShowWindow(mWindowHandle, SW_SHOW);
-        UpdateWindow(mWindowHandle);
+        SetupDeviceContext();
     }
 
     Window::~Window()
     {
+        if (mRenderContext)
+        {
+            wglMakeCurrent(mDeviceContext, 0);
+            wglDeleteContext(mRenderContext);
+        }
+
         if (mDeviceContext)
         {
             ReleaseDC(mWindowHandle, mDeviceContext);
@@ -82,6 +82,11 @@ namespace XPG
     void Window::Run()
     {
         SetTimer(mWindowHandle, 0, 1000, TimerProc);
+
+        glClearColor(0.5f, 0.0f, 0.0f, 1.0f);
+
+        ShowWindow(mWindowHandle, SW_SHOW);
+        UpdateWindow(mWindowHandle);
 
         BOOL result;
         MSG msg;
@@ -136,7 +141,7 @@ namespace XPG
         switch (inMessage)
         {
         case WM_PAINT:
-            std::cerr << "paint!\n";
+            OnPaint();
             break;
 
         case WM_DESTROY:
@@ -148,5 +153,42 @@ namespace XPG
         }
 
         return DefWindowProc(inWindowHandle, inMessage, inW, inL);
+    }
+
+    void Window::SetupDeviceContext()
+    {
+        mDeviceContext = GetDC(mWindowHandle);
+
+        PIXELFORMATDESCRIPTOR pfd;
+        memset(&pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
+        pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+        pfd.dwFlags = PFD_DOUBLEBUFFER | PFD_SUPPORT_OPENGL |
+            PFD_DRAW_TO_WINDOW;
+        pfd.iPixelType = PFD_TYPE_RGBA;
+        pfd.cColorBits = 32;
+        pfd.cDepthBits = 32;
+        pfd.iLayerType = PFD_MAIN_PLANE;
+
+        int nPixelFormat = ChoosePixelFormat(mDeviceContext, &pfd);
+        if (nPixelFormat == 0)
+        {
+            std::cerr << "failed ChoosePixelFormat\n";
+            return;
+        }
+
+        if (!SetPixelFormat(mDeviceContext, nPixelFormat, &pfd))
+        {
+            std::cerr << "failed SetPixelFormat\n";
+            return;
+        }
+
+        mRenderContext = wglCreateContext(mDeviceContext);
+        wglMakeCurrent(mDeviceContext, mRenderContext);
+    }
+
+    void Window::OnPaint()
+    {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        SwapBuffers();
     }
 }

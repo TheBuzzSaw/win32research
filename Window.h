@@ -2,6 +2,7 @@
 #define WINDOW_H
 
 #include <Windows.h>
+#include <GL/glew.h>
 
 namespace XPG
 {
@@ -13,6 +14,7 @@ namespace XPG
 
             void Run();
             void Update();
+            inline void SwapBuffers() { ::SwapBuffers(mDeviceContext); }
 
         protected:
         private:
@@ -24,10 +26,14 @@ namespace XPG
             LRESULT CALLBACK WindowProcess(HWND inWindowHandle, UINT inMessage,
                 WPARAM inW, LPARAM inL);
 
+            void SetupDeviceContext();
+            void OnPaint();
+
             LPTSTR mClassName;
             HINSTANCE mInstanceHandle;
             HWND mWindowHandle;
             HDC mDeviceContext;
+            HGLRC mRenderContext;
     };
 }
 

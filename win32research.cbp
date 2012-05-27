@@ -37,6 +37,8 @@
 			<Add library="gdi32" />
 			<Add library="opengl32" />
 		</Linker>
+		<Unit filename="GL\glew.h" />
+		<Unit filename="GL\wglew.h" />
 		<Unit filename="Window.cpp" />
 		<Unit filename="Window.h" />
 		<Unit filename="glew.c">
