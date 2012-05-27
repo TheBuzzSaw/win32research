@@ -3,6 +3,7 @@
 
 #include <Windows.h>
 #include <GL/glew.h>
+#include <GL/wglew.h>
 
 namespace XPG
 {
@@ -12,6 +13,7 @@ namespace XPG
             Window();
             virtual ~Window();
 
+            void DisplayVersion();
             void Run();
             void Update();
             inline void SwapBuffers() { ::SwapBuffers(mDeviceContext); }
@@ -26,7 +28,8 @@ namespace XPG
             LRESULT CALLBACK WindowProcess(HWND inWindowHandle, UINT inMessage,
                 WPARAM inW, LPARAM inL);
 
-            void SetupDeviceContext();
+            void SetupLegacyContext();
+            void SetupCoreContext();
             void OnLoad();
             void OnResize();
             void OnResize(int inWidth, int inHeight);

@@ -4,9 +4,11 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-    XPG::Window w;
-    cout << "Begin..." << endl;
-    w.Run();
-    cout << "Done!" << endl;
+    XPG::Window* window = new XPG::Window;
+
+    window->DisplayVersion();
+    cerr << "displayed version\n";
+    window->Run();
+    delete window;
     return 0;
 }

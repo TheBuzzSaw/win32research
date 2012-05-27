@@ -54,7 +54,17 @@ namespace XPG
             std::cerr << "error on CreateWindowEx\n";
         }
 
-        SetupDeviceContext();
+        mDeviceContext = GetDC(mWindowHandle);
+
+        if (wglChoosePixelFormatARB && wglCreateContextAttribsARB
+            && wglGetPixelFormatAttribivARB)
+        {
+            SetupCoreContext();
+        }
+        else
+        {
+            SetupLegacyContext();
+        }
     }
 
     Window::~Window()
@@ -77,6 +87,20 @@ namespace XPG
 
         UnregisterClass(ClassName, mInstanceHandle);
         ShowCursor(TRUE);
+    }
+
+    void Window::DisplayVersion()
+    {
+        if (glGetString)
+        {
+            const char* version = (const char*)glGetString(GL_VERSION);
+            std::cerr << "Version: " << version << std::endl;
+        }
+        else
+        {
+            std::cerr << "uh oh\n";
+        }
+
     }
 
     void Window::Run()
@@ -158,10 +182,8 @@ namespace XPG
         return DefWindowProc(inWindowHandle, inMessage, inW, inL);
     }
 
-    void Window::SetupDeviceContext()
+    void Window::SetupLegacyContext()
     {
-        mDeviceContext = GetDC(mWindowHandle);
-
         PIXELFORMATDESCRIPTOR pfd;
         memset(&pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
         pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
@@ -187,6 +209,67 @@ namespace XPG
 
         mRenderContext = wglCreateContext(mDeviceContext);
         wglMakeCurrent(mDeviceContext, mRenderContext);
+
+        GLenum e = glewInit();
+
+        if (e == GLEW_OK)
+        {
+            int attributes[] = {
+                WGL_CONTEXT_MAJOR_VERSION_ARB, 3, // Set the MAJOR version of OpenGL to 3
+                WGL_CONTEXT_MINOR_VERSION_ARB, 1, // Set the MINOR version of OpenGL to 2
+                //WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB, // Set our OpenGL context to be forward compatible
+                0
+                };
+
+            if (wglewIsSupported("WGL_ARB_create_context") == 1) { // If the OpenGL 3.x context creation extension is available
+                HGLRC rc = wglCreateContextAttribsARB(mDeviceContext, NULL, attributes); // Create and OpenGL 3.x context based on the given attributes
+                wglMakeCurrent(NULL, NULL); // Remove the temporary context from being active
+                wglDeleteContext(mRenderContext); // Delete the temporary OpenGL 2.1 context
+                wglMakeCurrent(mDeviceContext, rc); // Make our OpenGL 3.0 context current
+                mRenderContext = rc;
+            }
+        }
+    }
+
+    void Window::SetupCoreContext()
+    {
+        std::cerr << "SetupCoreContext()\n";
+
+        PIXELFORMATDESCRIPTOR pfd;
+        memset(&pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
+        pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+        pfd.dwFlags = PFD_DOUBLEBUFFER | PFD_SUPPORT_OPENGL |
+            PFD_DRAW_TO_WINDOW;
+        pfd.iPixelType = PFD_TYPE_RGBA;
+        pfd.cColorBits = 32;
+        pfd.cDepthBits = 32;
+        pfd.iLayerType = PFD_MAIN_PLANE;
+
+        int nPixelFormat = ChoosePixelFormat(mDeviceContext, &pfd);
+        if (nPixelFormat == 0)
+        {
+            std::cerr << "failed ChoosePixelFormat\n";
+            return;
+        }
+
+        if (!SetPixelFormat(mDeviceContext, nPixelFormat, &pfd))
+        {
+            std::cerr << "failed SetPixelFormat\n";
+            return;
+        }
+
+        GLint attribs[] = {
+            WGL_CONTEXT_MAJOR_VERSION_ARB, 3, // Set the MAJOR version of OpenGL to 3
+            WGL_CONTEXT_MINOR_VERSION_ARB, 2, // Set the MINOR version of OpenGL to 2
+            WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB, // Set our OpenGL context to be forward compatible
+            0, 0 };
+
+        std::cerr << "making new context\n";
+        mRenderContext = wglCreateContextAttribsARB(mDeviceContext, 0, attribs);
+        if (!mRenderContext)
+        {
+            std::cerr << "wglCreateContextAttribsARB failed\n";
+        }
     }
 
     void Window::OnLoad()
