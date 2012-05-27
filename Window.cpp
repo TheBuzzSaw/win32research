@@ -193,7 +193,7 @@ namespace XPG
     {
         SetTimer(mWindowHandle, 0, 1000, TimerProc);
 
-        glClearColor(0.5f, 0.0f, 0.0f, 1.0f);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     }
 
     void Window::OnResize()
@@ -228,9 +228,11 @@ namespace XPG
         glLoadIdentity();
 
         glBegin(GL_TRIANGLES);
-        glColor3f(1.0f, 1.0f, 0.0f);
+        glColor3f(1.0f, 0.0f, 0.0f);
         glVertex2f(-1.0f, -1.0f);
+        glColor3f(1.0f, 1.0f, 0.0f);
         glVertex2f(0.0f, 1.0f);
+        glColor3f(0.0f, 1.0f, 0.0f);
         glVertex2f(1.0f, -1.0f);
         glEnd();
 
