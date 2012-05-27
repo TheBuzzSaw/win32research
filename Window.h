@@ -27,6 +27,9 @@ namespace XPG
                 WPARAM inW, LPARAM inL);
 
             void SetupDeviceContext();
+            void OnLoad();
+            void OnResize();
+            void OnResize(int inWidth, int inHeight);
             void OnPaint();
 
             LPTSTR mClassName;

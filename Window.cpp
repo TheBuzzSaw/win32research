@@ -11,7 +11,7 @@ namespace XPG
         DWORD inTime)
     {
         std::cout << "TIMER" << std::endl;
-        ShowWindow(inWindowHandle, SW_SHOWNORMAL);
+        //ShowWindow(inWindowHandle, SW_SHOWNORMAL);
         //KillTimer(inWindowHandle, inId);
     }
 
@@ -81,9 +81,8 @@ namespace XPG
 
     void Window::Run()
     {
-        SetTimer(mWindowHandle, 0, 1000, TimerProc);
-
-        glClearColor(0.5f, 0.0f, 0.0f, 1.0f);
+        OnLoad();
+        OnResize();
 
         ShowWindow(mWindowHandle, SW_SHOW);
         UpdateWindow(mWindowHandle);
@@ -140,6 +139,10 @@ namespace XPG
     {
         switch (inMessage)
         {
+        case WM_SIZE:
+            OnResize();
+            break;
+
         case WM_PAINT:
             OnPaint();
             break;
@@ -186,9 +189,51 @@ namespace XPG
         wglMakeCurrent(mDeviceContext, mRenderContext);
     }
 
+    void Window::OnLoad()
+    {
+        SetTimer(mWindowHandle, 0, 1000, TimerProc);
+
+        glClearColor(0.5f, 0.0f, 0.0f, 1.0f);
+    }
+
+    void Window::OnResize()
+    {
+        RECT r;
+        GetWindowRect(mWindowHandle, &r);
+
+        int width = r.right - r.left;
+        int height = r.bottom - r.top;
+
+        OnResize(width, height);
+    }
+
+    void Window::OnResize(int inWidth, int inHeight)
+    {
+        glViewport(0, 0, inWidth, inHeight);
+        glMatrixMode(GL_PROJECTION);
+
+        float ratio = float(inWidth) / float(inHeight);
+        const float range = 4.0f;
+
+        glLoadIdentity();
+        glOrtho(-range * ratio, range * ratio, -range, range, -range, range);
+
+        glMatrixMode(GL_MODELVIEW);
+    }
+
     void Window::OnPaint()
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glLoadIdentity();
+
+        glBegin(GL_TRIANGLES);
+        glColor3f(1.0f, 1.0f, 0.0f);
+        glVertex2f(-1.0f, -1.0f);
+        glVertex2f(0.0f, 1.0f);
+        glVertex2f(1.0f, -1.0f);
+        glEnd();
+
         SwapBuffers();
     }
 }
