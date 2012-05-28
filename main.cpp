@@ -12,7 +12,7 @@ int main(int argc, char** argv)
     window.DisplayVersion();
     cerr << "displayed version\n";
 
-    while (true)
+    //while (true)
         window.Run();
     return 0;
 }

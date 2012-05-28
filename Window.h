@@ -39,6 +39,8 @@ namespace XPG
             HWND mWindowHandle;
             HDC mDeviceContext;
             HGLRC mRenderContext;
+
+            float mRotation;
     };
 }
 

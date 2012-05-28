@@ -9,16 +9,10 @@ namespace XPG
     const char* const ClassName = "XPG";
     const char* const Title = "XPG Reborn";
 
-    VOID CALLBACK TimerProc(HWND inWindowHandle, UINT inMessage, UINT_PTR inId,
-        DWORD inTime)
-    {
-        std::cout << "TIMER" << std::endl;
-        //ShowWindow(inWindowHandle, SW_SHOWNORMAL);
-        //KillTimer(inWindowHandle, inId);
-    }
-
     Window::Window()
     {
+        mRotation = 0.0f;
+
         mInstanceHandle = GetModuleHandle(NULL);
 
         WNDCLASSEX windowClass;
@@ -87,16 +81,8 @@ namespace XPG
 
     void Window::DisplayVersion()
     {
-        if (glGetString)
-        {
-            const char* version = (const char*)glGetString(GL_VERSION);
-            std::cerr << "Version: " << version << std::endl;
-        }
-        else
-        {
-            std::cerr << "uh oh\n";
-        }
-
+        const char* version = (const char*)glGetString(GL_VERSION);
+        std::cerr << "Version: " << version << std::endl;
     }
 
     void Window::Run()
@@ -128,7 +114,7 @@ namespace XPG
             std::cerr << "WM_QUIT\n";
 
         ShowWindow(mWindowHandle, SW_HIDE);
-        Sleep(1000);
+        //Sleep(1000);
     }
 
     LRESULT CALLBACK Window::SetupCallback(HWND inWindowHandle, UINT inMessage,
@@ -193,6 +179,13 @@ namespace XPG
             //PostQuitMessage(0);
             break;
 
+        case WM_TIMER:
+            //std::cerr << "TIMER\n";
+            mRotation += 0.5f;
+            if (mRotation > 180.0f) mRotation -= 360.0f;
+            OnPaint();
+            break;
+
         default:
             break;
         }
@@ -233,10 +226,8 @@ namespace XPG
         if (e == GLEW_OK)
         {
             int attributes[] = {
-                WGL_CONTEXT_MAJOR_VERSION_ARB, 3, // Set the MAJOR version of OpenGL to 3
-                WGL_CONTEXT_MINOR_VERSION_ARB, 2, // Set the MINOR version of OpenGL to 2
-                //WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB, // Set our OpenGL context to be forward compatible
-                //WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+                WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+                WGL_CONTEXT_MINOR_VERSION_ARB, 1,
                 0, 0
                 };
 
@@ -258,7 +249,7 @@ namespace XPG
 
     void Window::OnLoad()
     {
-        SetTimer(mWindowHandle, 0, 1000, TimerProc);
+        SetTimer(mWindowHandle, 0, 40, NULL);
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     }
@@ -293,12 +284,7 @@ namespace XPG
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glLoadIdentity();
-
-        static float rotation = 0.0;
-        rotation += 1.0f;
-        if (rotation > 180.0f) rotation -= 360.0f;
-
-        glRotatef(rotation, 0.0f, 0.0f, 1.0f);
+        glRotatef(mRotation, 0.0f, 0.0f, 1.0f);
 
         glBegin(GL_TRIANGLES);
         glColor3f(1.0f, 0.0f, 0.0f);
