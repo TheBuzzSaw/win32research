@@ -249,7 +249,7 @@ namespace XPG
 
     void Window::OnLoad()
     {
-        SetTimer(mWindowHandle, 0, 40, NULL);
+        SetTimer(mWindowHandle, 0, 25, NULL);
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     }
