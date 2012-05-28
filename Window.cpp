@@ -4,6 +4,8 @@
 
 namespace XPG
 {
+    // http://msdn.microsoft.com/en-us/library/windows/desktop/ms633570(v=vs.85).aspx#designing_proc
+
     const char* const ClassName = "XPG";
     const char* const Title = "XPG Reborn";
 
@@ -73,7 +75,10 @@ namespace XPG
 
         if (mWindowHandle)
         {
-            DestroyWindow(mWindowHandle);
+            if (!DestroyWindow(mWindowHandle))
+            {
+                std::cerr << "error on DestroyWindow\n";
+            }
         }
 
         UnregisterClass(ClassName, mInstanceHandle);
@@ -107,12 +112,23 @@ namespace XPG
 
         while ((result = GetMessage(&msg, NULL, 0, 0)) != 0)
         {
-            if (result != -1)
+            if (result == -1)
+            {
+                std::cerr << "error on GetMessage\n";
+                break;
+            }
+            else
             {
                 //TranslateMessage(&msg);
                 DispatchMessage(&msg);
             }
         }
+
+        if (msg.message == WM_QUIT)
+            std::cerr << "WM_QUIT\n";
+
+        ShowWindow(mWindowHandle, SW_HIDE);
+        Sleep(1000);
     }
 
     LRESULT CALLBACK Window::SetupCallback(HWND inWindowHandle, UINT inMessage,
@@ -154,6 +170,16 @@ namespace XPG
     {
         switch (inMessage)
         {
+        case WM_CREATE:
+            std::cerr << "WM_CREATE\n";
+            break;
+
+        case WM_CLOSE:
+            std::cerr << "WM_CLOSE\n";
+            PostQuitMessage(0);
+            return 0;
+            break;
+
         case WM_SIZE:
             OnResize();
             break;
@@ -163,7 +189,8 @@ namespace XPG
             break;
 
         case WM_DESTROY:
-            PostQuitMessage(0);
+            std::cerr << "WM_DESTROY\n";
+            //PostQuitMessage(0);
             break;
 
         default:

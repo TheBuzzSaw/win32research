@@ -11,6 +11,8 @@ int main(int argc, char** argv)
 
     window.DisplayVersion();
     cerr << "displayed version\n";
-    window.Run();
+
+    while (true)
+        window.Run();
     return 0;
 }
