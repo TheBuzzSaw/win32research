@@ -2,13 +2,15 @@
 #include <iostream>
 using namespace std;
 
+// The Future:
+// http://veelck.wordpress.com/2008/11/28/multithread-texture-loading-in-opengl/
+
 int main(int argc, char** argv)
 {
-    XPG::Window* window = new XPG::Window;
+    XPG::Window window;
 
-    window->DisplayVersion();
+    window.DisplayVersion();
     cerr << "displayed version\n";
-    window->Run();
-    delete window;
+    window.Run();
     return 0;
 }

@@ -55,16 +55,7 @@ namespace XPG
         }
 
         mDeviceContext = GetDC(mWindowHandle);
-
-        if (wglChoosePixelFormatARB && wglCreateContextAttribsARB
-            && wglGetPixelFormatAttribivARB)
-        {
-            SetupCoreContext();
-        }
-        else
-        {
-            SetupLegacyContext();
-        }
+        SetupContext();
     }
 
     Window::~Window()
@@ -182,7 +173,7 @@ namespace XPG
         return DefWindowProc(inWindowHandle, inMessage, inW, inL);
     }
 
-    void Window::SetupLegacyContext()
+    void Window::SetupContext()
     {
         PIXELFORMATDESCRIPTOR pfd;
         memset(&pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
@@ -216,59 +207,25 @@ namespace XPG
         {
             int attributes[] = {
                 WGL_CONTEXT_MAJOR_VERSION_ARB, 3, // Set the MAJOR version of OpenGL to 3
-                WGL_CONTEXT_MINOR_VERSION_ARB, 1, // Set the MINOR version of OpenGL to 2
+                WGL_CONTEXT_MINOR_VERSION_ARB, 2, // Set the MINOR version of OpenGL to 2
                 //WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB, // Set our OpenGL context to be forward compatible
-                0
+                //WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+                0, 0
                 };
 
-            if (wglewIsSupported("WGL_ARB_create_context") == 1) { // If the OpenGL 3.x context creation extension is available
-                HGLRC rc = wglCreateContextAttribsARB(mDeviceContext, NULL, attributes); // Create and OpenGL 3.x context based on the given attributes
-                wglMakeCurrent(NULL, NULL); // Remove the temporary context from being active
-                wglDeleteContext(mRenderContext); // Delete the temporary OpenGL 2.1 context
-                wglMakeCurrent(mDeviceContext, rc); // Make our OpenGL 3.0 context current
-                mRenderContext = rc;
+            if (wglewIsSupported("WGL_ARB_create_context") == 1)
+            {
+                HGLRC rc = wglCreateContextAttribsARB(mDeviceContext, NULL,
+                    attributes);
+
+                if (rc)
+                {
+                    wglMakeCurrent(NULL, NULL);
+                    wglDeleteContext(mRenderContext);
+                    mRenderContext = rc;
+                    wglMakeCurrent(mDeviceContext, mRenderContext);
+                }
             }
-        }
-    }
-
-    void Window::SetupCoreContext()
-    {
-        std::cerr << "SetupCoreContext()\n";
-
-        PIXELFORMATDESCRIPTOR pfd;
-        memset(&pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
-        pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
-        pfd.dwFlags = PFD_DOUBLEBUFFER | PFD_SUPPORT_OPENGL |
-            PFD_DRAW_TO_WINDOW;
-        pfd.iPixelType = PFD_TYPE_RGBA;
-        pfd.cColorBits = 32;
-        pfd.cDepthBits = 32;
-        pfd.iLayerType = PFD_MAIN_PLANE;
-
-        int nPixelFormat = ChoosePixelFormat(mDeviceContext, &pfd);
-        if (nPixelFormat == 0)
-        {
-            std::cerr << "failed ChoosePixelFormat\n";
-            return;
-        }
-
-        if (!SetPixelFormat(mDeviceContext, nPixelFormat, &pfd))
-        {
-            std::cerr << "failed SetPixelFormat\n";
-            return;
-        }
-
-        GLint attribs[] = {
-            WGL_CONTEXT_MAJOR_VERSION_ARB, 3, // Set the MAJOR version of OpenGL to 3
-            WGL_CONTEXT_MINOR_VERSION_ARB, 2, // Set the MINOR version of OpenGL to 2
-            WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB, // Set our OpenGL context to be forward compatible
-            0, 0 };
-
-        std::cerr << "making new context\n";
-        mRenderContext = wglCreateContextAttribsARB(mDeviceContext, 0, attribs);
-        if (!mRenderContext)
-        {
-            std::cerr << "wglCreateContextAttribsARB failed\n";
         }
     }
 
@@ -296,7 +253,7 @@ namespace XPG
         glMatrixMode(GL_PROJECTION);
 
         float ratio = float(inWidth) / float(inHeight);
-        const float range = 4.0f;
+        const float range = 2.0f;
 
         glLoadIdentity();
         glOrtho(-range * ratio, range * ratio, -range, range, -range, range);
@@ -309,6 +266,12 @@ namespace XPG
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glLoadIdentity();
+
+        static float rotation = 0.0;
+        rotation += 1.0f;
+        if (rotation > 180.0f) rotation -= 360.0f;
+
+        glRotatef(rotation, 0.0f, 0.0f, 1.0f);
 
         glBegin(GL_TRIANGLES);
         glColor3f(1.0f, 0.0f, 0.0f);

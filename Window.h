@@ -28,8 +28,7 @@ namespace XPG
             LRESULT CALLBACK WindowProcess(HWND inWindowHandle, UINT inMessage,
                 WPARAM inW, LPARAM inL);
 
-            void SetupLegacyContext();
-            void SetupCoreContext();
+            void SetupContext();
             void OnLoad();
             void OnResize();
             void OnResize(int inWidth, int inHeight);
