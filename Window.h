@@ -33,12 +33,15 @@ namespace XPG
             void OnResize();
             void OnResize(int inWidth, int inHeight);
             void OnPaint();
+            void SetFullscreen(bool inFullscreen);
+            void ToggleFullscreen();
 
             LPTSTR mClassName;
             HINSTANCE mInstanceHandle;
             HWND mWindowHandle;
             HDC mDeviceContext;
             HGLRC mRenderContext;
+            RECT mFormerPosition;
 
             float mRotation;
     };

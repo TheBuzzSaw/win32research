@@ -6,8 +6,11 @@ namespace XPG
 {
     // http://msdn.microsoft.com/en-us/library/windows/desktop/ms633570(v=vs.85).aspx#designing_proc
 
-    const char* const ClassName = "XPG";
-    const char* const Title = "XPG Reborn";
+    static const char* const ClassName = "XPG";
+    static const char* const Title = "XPG Reborn";
+
+    static const DWORD BaseStyle = WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
+    static const DWORD BaseExStyle = WS_EX_APPWINDOW;
 
     Window::Window()
     {
@@ -36,10 +39,8 @@ namespace XPG
             return;
         }
 
-        DWORD dwExStyle = WS_EX_APPWINDOW;
-        DWORD dwStyle = WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
-        dwExStyle |= WS_EX_WINDOWEDGE;
-        dwStyle |= WS_OVERLAPPEDWINDOW;
+        DWORD dwExStyle = BaseExStyle | WS_EX_WINDOWEDGE;
+        DWORD dwStyle = BaseStyle | WS_OVERLAPPEDWINDOW;
 
         mWindowHandle = CreateWindowEx(dwExStyle, ClassName, "XPG Reborn",
                                dwStyle, CW_USEDEFAULT, 0, 640,
@@ -186,6 +187,17 @@ namespace XPG
             OnPaint();
             break;
 
+        case WM_KEYDOWN:
+        case WM_SYSKEYDOWN:
+        {
+            unsigned int key = (inL & 0x00ff0000) >> 16;
+            if (key == 1)
+                PostQuitMessage(0);
+            else if (key == 87)
+                ToggleFullscreen();
+            break;
+        }
+
         default:
             break;
         }
@@ -296,5 +308,45 @@ namespace XPG
         glEnd();
 
         SwapBuffers();
+    }
+
+    void Window::SetFullscreen(bool inFullscreen)
+    {
+        ShowWindow(mWindowHandle, SW_HIDE);
+
+        DWORD style = BaseStyle;
+        DWORD exStyle = BaseExStyle;
+        int commandShow = SW_SHOWNORMAL;
+
+        if (inFullscreen)
+        {
+            GetWindowRect(mWindowHandle, &mFormerPosition);
+            style |= WS_POPUP;
+            commandShow = SW_SHOWMAXIMIZED;
+        }
+        else
+        {
+            style |= WS_OVERLAPPEDWINDOW;
+            exStyle |= WS_EX_WINDOWEDGE;
+        }
+
+        SetWindowLongPtr(mWindowHandle, GWL_STYLE, style);
+        SetWindowLongPtr(mWindowHandle, GWL_EXSTYLE, exStyle);
+
+        if (!inFullscreen)
+        {
+            int width = mFormerPosition.right - mFormerPosition.left;
+            int height = mFormerPosition.bottom - mFormerPosition.top;
+            MoveWindow(mWindowHandle, mFormerPosition.left, mFormerPosition.top, width, height, true);
+        }
+
+        ShowWindow(mWindowHandle, commandShow);
+    }
+
+    void Window::ToggleFullscreen()
+    {
+        LONG_PTR style = GetWindowLongPtr(mWindowHandle, GWL_STYLE);
+        bool isFullscreen = style & WS_POPUP;
+        SetFullscreen(!isFullscreen);
     }
 }
